@@ -47,8 +47,64 @@ export interface Post {
   what_worked?: string;
   what_did_not_work?: string;
   improvement_ideas?: string;
+  external_post_id?: string;
+  source: string;
+  last_synced_at?: string;
   created_at: string;
   updated_at: string;
+}
+
+export interface PlatformAccount {
+  id: string;
+  platform: string;
+  username: string;
+  external_id?: string;
+  display_name?: string;
+  followers_count: number;
+  last_synced_at?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface RawPlatformPost {
+  id: string;
+  platform: string;
+  external_post_id: string;
+  account_username?: string;
+  title?: string;
+  text?: string;
+  url?: string;
+  published_at?: string;
+  raw_json?: unknown;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface PostMetricSnapshot {
+  id: string;
+  platform: string;
+  external_post_id: string;
+  post_id?: string;
+  captured_at: string;
+  views: number;
+  likes: number;
+  comments: number;
+  shares: number;
+  saves: number;
+  clicks: number;
+  followers: number;
+  raw_json?: unknown;
+}
+
+export interface SyncRun {
+  id: string;
+  platform: string;
+  status: 'running' | 'success' | 'failed' | 'skipped';
+  started_at: string;
+  finished_at?: string;
+  error?: string;
+  items_processed: number;
+  raw_json?: unknown;
 }
 
 export interface SubscriberSnapshot {
@@ -74,7 +130,7 @@ export interface PlatformMetric {
 export interface Setting {
   id: string;
   key: string;
-  value: any;
+  value: unknown;
   created_at: string;
   updated_at: string;
 }

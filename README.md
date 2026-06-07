@@ -17,6 +17,7 @@ AEVUM is a crypto research and media brand. This is an internal analytics dashbo
 - `/src/app`: Next.js pages and layouts
 - `/src/components`: Reusable UI components
 - `/src/lib`: Utilities for Supabase, Telegram, Analytics, and Auth
+- `/src/lib/collectors`: Platform-specific data scrapers/collectors
 - `/src/types`: TypeScript definitions
 - `/supabase`: Database migrations and seed data
 
@@ -25,35 +26,75 @@ AEVUM is a crypto research and media brand. This is an internal analytics dashbo
 ### 1. Supabase Setup
 
 1. Create a new project on [Supabase](https://supabase.com).
-2. Go to the SQL Editor and run the contents of `supabase/migrations/20240606000000_initial_schema.sql`.
-3. (Optional) Run `supabase/seed.sql` to populate the dashboard with sample data.
-4. Get your Project URL and Anon Key from Project Settings > API.
+2. Run migrations from `supabase/migrations/` in order.
+3. (Optional) Run `supabase/seed.sql` to populate with sample data.
+4. Get your Project URL, Anon Key, and **Service Role Key** (for server-side sync).
 
 ### 2. Environment Variables
 
-Create a `.env.local` file in the root directory (use `.env.example` as a template):
+Create a `.env.local` file:
 
 ```env
+# Supabase
 NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
+
+# Telegram
+TELEGRAM_BOT_TOKEN=your_bot_token
+TELEGRAM_CHANNEL_USERNAME=@project_aevum
+
+# X / Twitter
+X_BEARER_TOKEN=your_x_bearer_token
+X_USERNAME=@project_aevum
+X_USER_ID=your_x_user_id
+
+# TikTok
+TIKTOK_ACCESS_TOKEN=your_tiktok_access_token
+
+# Sync Security
+CRON_SECRET=your_random_secret_string
 ```
 
-### 3. Local Development
+### 3. API Setup Guide
 
-```bash
-# Install dependencies
-npm install
+#### Telegram
+1. Create bot via [@BotFather](https://t.me/BotFather).
+2. Add bot as Administrator to your channel.
+3. Bot API `getChatMemberCount` is used for subscriber snapshots.
 
-# Run development server
-npm run dev
+#### X / Twitter
+1. Create a developer account at [developer.twitter.com](https://developer.twitter.com).
+2. Generate a **Bearer Token** from a v2 App.
+3. Ensure the app has "User tweet" and "Users" read permissions.
+
+#### TikTok
+1. Register a developer account at [developers.tiktok.com](https://developers.tiktok.com).
+2. Create an app and enable "Video List" and "User Info" scopes.
+3. Use OAuth to obtain an `ACCESS_TOKEN`.
+
+### 4. Vercel Cron Configuration
+
+The dashboard uses Vercel Cron to automate daily sync.
+In `vercel.json`:
+```json
+{
+  "crons": [
+    {
+      "path": "/api/sync/all?secret=CRON_SECRET",
+      "schedule": "0 0 * * *"
+    }
+  ]
+}
 ```
+*Note: Replace `CRON_SECRET` with your environment variable value in Vercel dashboard settings for the cron job path.*
 
-### 4. Telegram Mini App Configuration
-
-1. Create a bot via [@BotFather](https://t.me/BotFather).
-2. Use the `/newapp` command to create a Mini App.
-3. Set the Web App URL to your deployed dashboard (or use a tunneling service like ngrok for local testing).
-4. Add your Telegram User ID to the `allowed_admins` table in Supabase to gain access.
+### 5. Removing Seed Data
+Once real sync is working, you can clear the demo data from Supabase:
+```sql
+DELETE FROM posts WHERE source = 'manual';
+DELETE FROM subscriber_snapshots WHERE notes = 'Starting point' OR notes = 'Current';
+```
 
 ## Metrics Calculations
 
@@ -61,10 +102,8 @@ npm run dev
 - **Conversion Score:** Weighted score based on saves, shares, comments, clicks, and subscriber growth.
 - **Consistency Score:** Based on planned posts per week vs actual posts.
 
-## Future Improvements
-
-- Automatic Telegram channel stats import via Bot API.
-- X/Twitter, TikTok, and Instagram analytics integration.
-- AI-generated content recommendations and weekly reports.
-- Content idea scoring and publishing calendar.
-- Multi-agent workflow integration (Research, Content, Visual, Analytics).
+## Features
+- **Real-time Sync:** Fetch metrics from Telegram, X, and TikTok APIs.
+- **Sync Status:** Track success/failure of background jobs directly on Overview.
+- **Manual Sync:** Trigger sync for specific platforms from the Admin Panel.
+- **Server-Side Ingestion:** All API secrets are kept server-side for security.
