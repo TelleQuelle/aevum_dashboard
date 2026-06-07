@@ -1,7 +1,7 @@
 {
   "crons": [
     {
-      "path": "/api/sync/all?secret=your_cron_secret_here",
+      "path": "/api/sync/all?secret=aevum_sync_2026_private_key_9f4b7c2d1x",
       "schedule": "0 0 * * *"
     }
   ]
